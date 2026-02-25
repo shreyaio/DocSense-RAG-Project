@@ -11,11 +11,11 @@
   - [x] Implement `core/chunk/metadata_builder.py` and test deterministic IDs (Step 6)
 - [x] Section 4: Embedding
   - [x] Implement `core/embed/embedder.py` and test chunk embeddings (Step 7)
-- [ ] Section 5: Storage Interfaces and Implementations
-  - [ ] Define abstract interfaces in `storage/base.py` (Step 8)
-  - [ ] Implement `storage/qdrant_store.py` and test local upsert/search (Step 9)
-  - [ ] Implement `storage/bm25_store.py` and test index build/search (Step 10)
-  - [ ] Implement `storage/file_store.py` and test save/load json (Step 11)
+- [x] Section 5: Storage Interfaces and Implementations
+  - [x] Define abstract interfaces in `storage/base.py` (Step 8)
+  - [x] Implement `storage/qdrant_store.py` and test local upsert/search (Step 9)
+  - [x] Implement `storage/bm25_store.py` and test index build/search (Step 10)
+  - [x] Implement `storage/file_store.py` and test save/load json (Step 11)
 - [ ] Section 6: Ingestion Pipeline Orchestration
   - [ ] Implement `core/pipeline/ingestion.py` and run full e2e ingestion on a real PDF (Step 12)
 - [ ] Section 7: Retrieval Components

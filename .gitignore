@@ -1,41 +1,14 @@
-# =========================
 # Python
-# =========================
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.egg-info/
-dist/
-build/
-
-# =========================
-# Virtual Environment
-# =========================
+*.py[cod]
+*$py.class
 venv/
 .env
-.env.*
 
-# =========================
-# IDE / Editor
-# =========================
+# RAG Data (Authoritative)
+data/
+backend/data/
+
+# IDEs
 .vscode/
 .idea/
-
-# =========================
-# OS Files
-# =========================
-.DS_Store
-Thumbs.db
-
-# =========================
-# Model Cache (HuggingFace / Torch)
-# =========================
-.cache/
-.huggingface/
-torch_cache/
-
-# =========================
-# Logs
-# =========================
-*.log
