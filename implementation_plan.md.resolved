@@ -1,0 +1,110 @@
+# Implementation Plan: Production-Grade RAG System
+
+This document outlines the systematic, section-wise implementation of the RAG system based on the authoritative [Architecture-Workflow-Plan.txt](file:///c:/ML%20Projects/RAGApp/Architecture-Workflow-Plan.txt). The implementation is strictly ordered to ensure each component is built and tested independently before progressing to the next.
+
+## Architecture Guidelines
+
+*   **No Docker**: Application deployment utilizes managed platforms under free tiers (Render, Vercel).
+*   **Free Models**: All embeddings and generations rely exclusively on free access methods:
+    *   Embeddings: `BAAI/bge-large-en-v1.5`
+    *   Reranking: `cross-encoder/ms-marco-MiniLM-L-6-v2`
+    *   LLM Generation: OpenRouter `mistralai/mistral-7b-instruct:free`
+
+## Proposed Changes
+
+### Section 1: Data Contracts and Configuration
+Define the core schemas and global configuration. These are the foundation for all subsequent layers.
+#### [NEW] backend/models/__init__.py
+#### [NEW] backend/models/chunk.py
+#### [NEW] backend/models/document.py
+#### [NEW] backend/models/query.py
+#### [NEW] backend/config/__init__.py
+#### [NEW] backend/config/settings.py
+#### [NEW] backend/config/config.yaml
+
+### Section 2: PDF Parsing and Structure Detection
+Implement the first stage of the ingestion pipeline: extracting text, tables, and document structure.
+#### [NEW] backend/core/parse/__init__.py
+#### [NEW] backend/core/parse/pdf_parser.py
+#### [NEW] backend/core/parse/structure_detector.py
+
+### Section 3: Chunking and Metadata Building
+Implement parent-child chunking and populate all authoritative metadata fields.
+#### [NEW] backend/core/chunk/__init__.py
+#### [NEW] backend/core/chunk/chunker.py
+#### [NEW] backend/core/chunk/metadata_builder.py
+
+### Section 4: Embedding
+Implement the embedding layer using BAAI/bge-large-en-v1.5.
+#### [NEW] backend/core/embed/__init__.py
+#### [NEW] backend/core/embed/embedder.py
+
+### Section 5: Storage Interfaces and Implementations
+Define abstract base classes for storage and implement the local versions (Qdrant, BM25, FileStore).
+#### [NEW] backend/storage/__init__.py
+#### [NEW] backend/storage/base.py
+#### [NEW] backend/storage/qdrant_store.py
+#### [NEW] backend/storage/bm25_store.py
+#### [NEW] backend/storage/file_store.py
+
+### Section 6: Ingestion Pipeline Orchestration
+Connect parsing, chunking, embedding, and storage into a single background job.
+#### [NEW] backend/core/pipeline/__init__.py
+#### [NEW] backend/core/pipeline/ingestion.py
+
+### Section 7: Retrieval Components
+Implement the independent retrieval modules: query analysis, hybrid search, reranking, and context building.
+#### [NEW] backend/core/retrieve/__init__.py
+#### [NEW] backend/core/retrieve/query_analyser.py
+#### [NEW] backend/core/retrieve/hybrid_search.py
+#### [NEW] backend/core/retrieve/reranker.py
+#### [NEW] backend/core/retrieve/context_builder.py
+
+### Section 8: Generation and LLM Integration
+Implement prompt construction and the OpenRouter API client.
+#### [NEW] backend/core/generate/__init__.py
+#### [NEW] backend/core/generate/prompt_builder.py
+#### [NEW] backend/core/generate/llm_client.py
+
+### Section 9: Retrieval Pipeline Orchestration
+Connect retrieval components and generator into a unified evaluation flow.
+#### [NEW] backend/core/pipeline/retrieval.py
+
+### Section 10: API Layer
+Implement the FastAPI application, routes, and middleware.
+#### [NEW] backend/api/__init__.py
+#### [NEW] backend/api/main.py
+#### [NEW] backend/api/routes/__init__.py
+#### [NEW] backend/api/routes/ingest.py
+#### [NEW] backend/api/routes/query.py
+#### [NEW] backend/api/routes/documents.py
+
+### Section 11: Frontend Development
+Build the React UI to interact with the API endpoints.
+#### [NEW] frontend/src/api/client.js
+#### [NEW] frontend/src/components/UploadPanel.jsx
+#### [NEW] frontend/src/components/DocumentList.jsx
+#### [NEW] frontend/src/components/ChatWindow.jsx
+#### [NEW] frontend/src/components/SourcePanel.jsx
+#### [NEW] frontend/src/components/IngestionStatus.jsx
+#### [NEW] frontend/src/App.jsx
+#### [NEW] frontend/src/main.jsx
+
+### Section 12: Deployment Preparation
+Prepare deployment configurations for Render and Vercel. 
+#### [NEW] backend/requirements.txt
+#### [NEW] backend/.env.example
+
+## Verification Plan
+
+### Automated Tests
+*   `test_parsing.py`: Verify PyMuPDF and pdfplumber output blocks correctly.
+*   `test_chunking.py`: Verify chunk counts, parent-child relationships, and table atomicity.
+*   `test_embedding.py`: Verify embedding generation and L2 normalization.
+*   `test_retrieval.py`: Test hybrid search, RRF scoring, and reranking order changes.
+*   `test_api.py`: Test all FastAPI endpoints (`/ingest`, `/query`, `/documents`, `/health`).
+
+### Manual Verification
+*   Run the ingestion pipeline on a sample PDF and verify Qdrant, BM25 indices, and parent chunk JSON files are populated correctly.
+*   Send a manual `/query` POST request and examine the `retrieval_stats` and `citations`.
+*   Connect the frontend, upload a document via the UI, monitor the progress bar, and engage in a document-grounded chat.
