@@ -1,0 +1,39 @@
+# RAG System Implementation Tasks
+
+- [x] Section 1: Data Contracts and Configuration
+  - [x] Implement [models/chunk.py](file:///c:/ML%20Projects/RAGApp/backend/models/chunk.py), [models/document.py](file:///c:/ML%20Projects/RAGApp/backend/models/document.py), [models/query.py](file:///c:/ML%20Projects/RAGApp/backend/models/query.py) (Step 1)
+  - [x] Implement [config/settings.py](file:///c:/ML%20Projects/RAGApp/backend/config/settings.py) and [config/config.yaml](file:///c:/ML%20Projects/RAGApp/backend/config/config.yaml) (Step 2)
+- [x] Section 2: PDF Parsing and Structure Detection
+  - [x] Implement `core/parse/pdf_parser.py` and test extraction (Step 3)
+  - [x] Implement `core/parse/structure_detector.py` and verify section paths (Step 4)
+- [x] Section 3: Chunking and Metadata Building
+  - [x] Implement `core/chunk/chunker.py` and test parent-child splits (Step 5)
+  - [x] Implement `core/chunk/metadata_builder.py` and test deterministic IDs (Step 6)
+- [x] Section 4: Embedding
+  - [x] Implement `core/embed/embedder.py` and test chunk embeddings (Step 7)
+- [ ] Section 5: Storage Interfaces and Implementations
+  - [ ] Define abstract interfaces in `storage/base.py` (Step 8)
+  - [ ] Implement `storage/qdrant_store.py` and test local upsert/search (Step 9)
+  - [ ] Implement `storage/bm25_store.py` and test index build/search (Step 10)
+  - [ ] Implement `storage/file_store.py` and test save/load json (Step 11)
+- [ ] Section 6: Ingestion Pipeline Orchestration
+  - [ ] Implement `core/pipeline/ingestion.py` and run full e2e ingestion on a real PDF (Step 12)
+- [ ] Section 7: Retrieval Components
+  - [ ] Implement `core/retrieve/query_analyser.py` to extract filters (Step 13)
+  - [ ] Implement `core/retrieve/hybrid_search.py` for dense+sparse+RRF (Step 14)
+  - [ ] Implement `core/retrieve/reranker.py` and test re-ordering (Step 15)
+  - [ ] Implement `core/retrieve/context_builder.py` for sibling expansion and dedup (Step 16)
+- [ ] Section 8: Generation and LLM Integration
+  - [ ] Implement `core/generate/prompt_builder.py` to compile system prompts and metadata (Step 17)
+  - [ ] Implement `core/generate/llm_client.py` and test OpenRouter call (Step 18)
+- [ ] Section 9: Retrieval Pipeline Orchestration
+  - [ ] Implement `core/pipeline/retrieval.py` for full question to cited answer flow (Step 19)
+- [ ] Section 10: API Layer
+  - [ ] Implement `api/main.py` and all routes in `api/routes/` (Step 20)
+  - [ ] Test all endpoints via curl/Postman 
+- [ ] Section 11: Frontend Development
+  - [ ] Scaffold React app and configure Tailwind (Step 21)
+  - [ ] Implement API client and React components (`UploadPanel`, `ChatWindow`, etc.)
+  - [ ] Connect frontend to API and test full system workflow
+- [ ] Section 12: Deployment Preparation
+  - [ ] Write `requirements.txt`, `.env.example` (Step 22)
