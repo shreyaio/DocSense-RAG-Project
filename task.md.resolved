@@ -23,11 +23,11 @@
   - [x] Implement `core/retrieve/hybrid_search.py` for dense+sparse+RRF (Step 14)
   - [x] Implement `core/retrieve/reranker.py` and test re-ordering (Step 15)
   - [x] Implement `core/retrieve/context_builder.py` for sibling expansion and dedup (Step 16)
-- [ ] Section 8: Generation and LLM Integration
-  - [ ] Implement `core/generate/prompt_builder.py` to compile system prompts and metadata (Step 17)
-  - [ ] Implement `core/generate/llm_client.py` and test OpenRouter call (Step 18)
-- [ ] Section 9: Retrieval Pipeline Orchestration
-  - [ ] Implement `core/pipeline/retrieval.py` for full question to cited answer flow (Step 19)
+- [x] Section 8: Generation and LLM Integration
+  - [x] Implement `core/generate/prompt_builder.py` to compile system prompts and metadata (Step 17)
+  - [x] Implement `core/generate/llm_client.py` and test OpenRouter call (Step 18)
+- [x] Section 9: Retrieval Pipeline Orchestration
+  - [x] Implement `core/pipeline/retrieval.py` for full question to cited answer flow (Step 19)
 - [ ] Section 10: API Layer
   - [ ] Implement `api/main.py` and all routes in `api/routes/` (Step 20)
   - [ ] Test all endpoints via curl/Postman 

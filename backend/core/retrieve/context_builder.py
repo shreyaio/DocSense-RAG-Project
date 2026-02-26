@@ -1,7 +1,7 @@
 from typing import List, Dict, Any
-from storage.base import FileStore
-from models.query import RetrievedContext
-from models.chunk import ChunkMetadata
+from backend.storage.base import FileStore
+from backend.models.query import RetrievedContext
+from backend.models.chunk import ChunkMetadata
 
 class ContextBuilder:
     """
@@ -24,10 +24,8 @@ class ContextBuilder:
         seen_parent_ids = set()
         
         for res in reranked_results:
-            payload = res["payload"]
-            # 'text' was added to the Qdrant payload for the reranker (Fix 5).
-            # Strip it before constructing ChunkMetadata, which doesn't have a 'text' field.
-            metadata_dict = {k: v for k, v in payload.items() if k != "text"}
+            metadata_dict = res["metadata"]
+            # Convert dict back to ChunkMetadata
             metadata = ChunkMetadata(**metadata_dict)
             
             parent_id = metadata.parent_id

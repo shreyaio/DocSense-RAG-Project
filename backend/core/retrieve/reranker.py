@@ -27,15 +27,12 @@ class Reranker:
     def rerank(self, query: str, candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Scores (query, passage) pairs and sorts results by relevance.
-        Each candidate must have 'payload' containing the 'text' field (child chunk text).
-        Note: 'text' is stored in Qdrant payload alongside ChunkMetadata fields.
+        Each candidate must have a 'text' field passed from the pipeline (fetched from FileStore).
         """
         if not candidates:
             return []
 
-        # Fix 5 (consumed here): 'text' is now present in payload because qdrant_store.upsert
-        # explicitly stores chunk.text in the payload dict alongside metadata fields.
-        pairs = [[query, c["payload"].get("text", "")] for c in candidates]
+        pairs = [[query, c.get("text", "")] for c in candidates]
 
         scores = self.model.predict(pairs)
 

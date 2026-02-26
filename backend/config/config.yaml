@@ -32,6 +32,7 @@ retrieval:
 
 llm:
   provider: "openrouter"
+  base_url: "https://openrouter.ai/api/v1"
   model: "mistralai/mistral-7b-instruct:free"
   fallback_model: "google/gemma-3-27b-it:free"
   max_tokens: 1024
