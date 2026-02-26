@@ -57,12 +57,11 @@ class QdrantLocalStore(VectorStore):
             if chunk.embedding is None:
                 continue
 
-            # Build payload from metadata fields + child chunk text (needed by reranker)
+            # Build payload strictly from metadata fields (No text stored in Qdrant)
             payload = chunk.metadata.model_dump()
-            payload["text"] = chunk.text  # Fix 5: child text required by reranker
 
             points.append(rest.PointStruct(
-                id=_to_uuid(chunk.metadata.chunk_id),  # Fix 6: valid UUID for Qdrant
+                id=_to_uuid(chunk.metadata.chunk_id),
                 vector=chunk.embedding,
                 payload=payload
             ))
@@ -79,10 +78,16 @@ class QdrantLocalStore(VectorStore):
             must_clauses = []
             for key, value in filters.items():
                 if value is not None:
-                    must_clauses.append(rest.FieldCondition(
-                        key=key,
-                        match=rest.MatchValue(value=value)
-                    ))
+                    if isinstance(value, list):
+                        must_clauses.append(rest.FieldCondition(
+                            key=key,
+                            match=rest.MatchAny(any=value)
+                        ))
+                    else:
+                        must_clauses.append(rest.FieldCondition(
+                            key=key,
+                            match=rest.MatchValue(value=value)
+                        ))
             if must_clauses:
                 query_filter = rest.Filter(must=must_clauses)
 

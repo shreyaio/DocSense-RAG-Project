@@ -4,16 +4,20 @@ __pycache__/
 *$py.class
 venv/
 .env
+backend/.env
 *.log
+.pytest_cache/
+.coverage
+htmlcov/
 
 # RAG Data (Authoritative)
 data/
 backend/data/
-*.pdf
+# Ignore specific data files if they appear in root
 *.pkl
-*.json
 
 # IDEs
 .vscode/
 .idea/
 .gemini/
+.DS_Store

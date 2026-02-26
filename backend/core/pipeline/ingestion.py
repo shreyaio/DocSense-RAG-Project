@@ -100,6 +100,4 @@ class IngestionPipeline:
             
         except Exception as e:
             logger.exception(f"Ingestion failed for {doc_id}")
-            if progress_callback:
-                progress_callback(-1, str(e)) # Use -1 to indicate failure
             raise e
