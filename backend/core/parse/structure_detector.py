@@ -1,5 +1,5 @@
 from typing import List, Dict, Any, Optional
-from backend.models.chunk import ParsedBlock
+from models.chunk import ParsedBlock
 import fitz
 
 class StructureDetector:

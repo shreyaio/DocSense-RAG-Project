@@ -1,8 +1,8 @@
 import hashlib
 from typing import List, Tuple, Dict, Any
 import tiktoken
-from backend.models.chunk import ParsedBlock, ParentChunk, ChildChunk, ChunkMetadata
-from backend.config.settings import settings
+from models.chunk import ParsedBlock, ParentChunk, ChildChunk, ChunkMetadata
+from config.settings import settings
 
 class Chunker:
     """

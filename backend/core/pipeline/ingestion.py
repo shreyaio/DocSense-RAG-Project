@@ -1,15 +1,13 @@
 import logging
 import time
 from typing import List, Callable, Optional
-from backend.core.parse.pdf_parser import PDFParser
-from backend.core.parse.structure_detector import StructureDetector
-
-# I'll check the paths.
-from backend.core.chunk.chunker import Chunker
-from backend.core.chunk.metadata_builder import MetadataBuilder
-from backend.core.embed.embedder import Embedder
-from backend.storage.base import VectorStore, BM25Store, FileStore
-from backend.models.chunk import ParsedBlock, ChildChunk, ParentChunk
+from core.parse.pdf_parser import PDFParser
+from core.parse.structure_detector import StructureDetector
+from core.chunk.chunker import Chunker
+from core.chunk.metadata_builder import MetadataBuilder
+from core.embed.embedder import Embedder
+from storage.base import VectorStore, BM25Store, FileStore
+from models.chunk import ParsedBlock, ChildChunk, ParentChunk
 
 logger = logging.getLogger(__name__)
 

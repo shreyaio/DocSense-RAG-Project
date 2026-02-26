@@ -1,10 +1,19 @@
+import uuid
 from typing import List, Dict, Optional
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as rest
-from backend.models.chunk import ChildChunk
-from backend.storage.base import VectorStore
-from backend.config.settings import settings
+from models.chunk import ChildChunk
+from storage.base import VectorStore
+from config.settings import settings
 import os
+
+
+def _to_uuid(chunk_id: str) -> str:
+    """Convert a SHA-256 hex string to a deterministic UUID (Qdrant-compatible point ID).
+    Takes the first 32 hex chars and formats as standard UUID.
+    """
+    return str(uuid.UUID(chunk_id[:32]))
+
 
 class QdrantLocalStore(VectorStore):
     """
@@ -47,13 +56,17 @@ class QdrantLocalStore(VectorStore):
         for chunk in chunks:
             if chunk.embedding is None:
                 continue
-                
+
+            # Build payload from metadata fields + child chunk text (needed by reranker)
+            payload = chunk.metadata.model_dump()
+            payload["text"] = chunk.text  # Fix 5: child text required by reranker
+
             points.append(rest.PointStruct(
-                id=chunk.metadata.chunk_id,
+                id=_to_uuid(chunk.metadata.chunk_id),  # Fix 6: valid UUID for Qdrant
                 vector=chunk.embedding,
-                payload=chunk.metadata.model_dump()
+                payload=payload
             ))
-            
+
         if points:
             self.client.upsert(
                 collection_name=self.config.collection_name,
@@ -80,14 +93,36 @@ class QdrantLocalStore(VectorStore):
             query_filter=query_filter,
             search_params=rest.SearchParams(hnsw_ef=self.config.hnsw_ef)
         )
-        
+
         return [
             {
-                "chunk_id": r.id,
+                # Return the app-level chunk_id from payload, not the internal Qdrant UUID
+                "chunk_id": r.payload.get("chunk_id", str(r.id)),
                 "score": r.score,
                 "payload": r.payload
-            } 
+            }
             for r in results
+        ]
+
+    def get_by_ids(self, chunk_ids: List[str]) -> List[Dict]:
+        """Fix 3: Fetch full payloads by app-level chunk_ids for sparse-only RRF hits."""
+        if not chunk_ids:
+            return []
+
+        point_ids = [_to_uuid(cid) for cid in chunk_ids]
+        results = self.client.retrieve(
+            collection_name=self.config.collection_name,
+            ids=point_ids,
+            with_payload=True
+        )
+
+        return [
+            {
+                "chunk_id": r.payload.get("chunk_id", str(r.id)),
+                "payload": r.payload
+            }
+            for r in results
+            if r.payload
         ]
 
     def delete_document(self, doc_id: str) -> None:
