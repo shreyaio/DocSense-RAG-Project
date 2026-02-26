@@ -1,8 +1,8 @@
 import os
 import json
 from typing import List, Dict
-from backend.models.chunk import ParentChunk
-from backend.storage.base import FileStore
+from models.chunk import ParentChunk
+from storage.base import FileStore
 
 class LocalFileStore(FileStore):
     """

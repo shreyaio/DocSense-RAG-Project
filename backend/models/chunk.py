@@ -14,8 +14,8 @@ class ChunkMetadata(BaseModel):
     # Identity
     chunk_id: str                    # sha256(doc_id + str(page_number) + str(char_start))
     parent_id: str
-    prev_chunk_id: str | None        # None only for first chunk of document
-    next_chunk_id: str | None        # None only for last chunk of document
+    prev_chunk_id: str | None = None        # None only for first chunk of document
+    next_chunk_id: str | None = None        # None only for last chunk of document
     # Source location
     doc_id: str
     source_file: str

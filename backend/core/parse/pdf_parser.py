@@ -2,7 +2,7 @@ import fitz  # PyMuPDF
 import pdfplumber
 import pandas as pd
 from typing import List, Dict, Any, Tuple
-from backend.models.chunk import ParsedBlock
+from models.chunk import ParsedBlock
 from collections import Counter
 import re
 

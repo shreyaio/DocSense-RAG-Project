@@ -1,10 +1,11 @@
 import os
 import pickle
 import json
+import numpy as np
 from typing import List, Tuple, Dict
 from rank_bm25 import BM25Okapi
-from backend.models.chunk import ChildChunk
-from backend.storage.base import BM25Store
+from models.chunk import ChildChunk
+from storage.base import BM25Store
 
 class LocalBM25Store(BM25Store):
     """
@@ -52,7 +53,6 @@ class LocalBM25Store(BM25Store):
         scores = bm25.get_scores(tokenized_query)
         
         # Get top-k indices
-        import numpy as np
         top_indices = np.argsort(scores)[::-1][:top_k]
         
         results = []

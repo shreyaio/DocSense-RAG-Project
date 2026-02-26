@@ -1,8 +1,8 @@
 import hashlib
 from datetime import datetime, timezone
 from typing import List, Tuple
-from backend.models.chunk import ChildChunk, ParentChunk, ChunkMetadata, ParsedBlock
-from backend.config.settings import settings
+from models.chunk import ChildChunk, ParentChunk, ChunkMetadata, ParsedBlock
+from config.settings import settings
 
 class MetadataBuilder:
     """

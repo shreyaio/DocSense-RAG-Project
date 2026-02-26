@@ -2,8 +2,8 @@ from typing import List
 import torch
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from backend.models.chunk import ChildChunk
-from backend.config.settings import settings
+from models.chunk import ChildChunk
+from config.settings import settings
 
 class Embedder:
     """

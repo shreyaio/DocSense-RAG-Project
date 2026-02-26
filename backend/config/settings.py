@@ -33,6 +33,7 @@ class RetrievalConfig(BaseModel):
     rrf_k: int = 60
     rerank_top_k: int = 20
     final_top_k: int = 5
+    reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
 class LLMConfig(BaseModel):
     provider: str = "openrouter"

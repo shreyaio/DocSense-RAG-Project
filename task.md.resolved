@@ -16,13 +16,13 @@
   - [x] Implement `storage/qdrant_store.py` and test local upsert/search (Step 9)
   - [x] Implement `storage/bm25_store.py` and test index build/search (Step 10)
   - [x] Implement `storage/file_store.py` and test save/load json (Step 11)
-- [ ] Section 6: Ingestion Pipeline Orchestration
-  - [ ] Implement `core/pipeline/ingestion.py` and run full e2e ingestion on a real PDF (Step 12)
-- [ ] Section 7: Retrieval Components
-  - [ ] Implement `core/retrieve/query_analyser.py` to extract filters (Step 13)
-  - [ ] Implement `core/retrieve/hybrid_search.py` for dense+sparse+RRF (Step 14)
-  - [ ] Implement `core/retrieve/reranker.py` and test re-ordering (Step 15)
-  - [ ] Implement `core/retrieve/context_builder.py` for sibling expansion and dedup (Step 16)
+- [x] Section 6: Ingestion Pipeline Orchestration
+  - [x] Implement `core/pipeline/ingestion.py` and run full e2e ingestion on a real PDF (Step 12)
+- [x] Section 7: Retrieval Components
+  - [x] Implement `core/retrieve/query_analyser.py` to extract filters (Step 13)
+  - [x] Implement `core/retrieve/hybrid_search.py` for dense+sparse+RRF (Step 14)
+  - [x] Implement `core/retrieve/reranker.py` and test re-ordering (Step 15)
+  - [x] Implement `core/retrieve/context_builder.py` for sibling expansion and dedup (Step 16)
 - [ ] Section 8: Generation and LLM Integration
   - [ ] Implement `core/generate/prompt_builder.py` to compile system prompts and metadata (Step 17)
   - [ ] Implement `core/generate/llm_client.py` and test OpenRouter call (Step 18)

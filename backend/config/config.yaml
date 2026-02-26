@@ -28,6 +28,7 @@ retrieval:
   rrf_k: 60
   rerank_top_k: 20
   final_top_k: 5
+  reranker_model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
 llm:
   provider: "openrouter"

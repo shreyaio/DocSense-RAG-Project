@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional, Tuple
-from backend.models.chunk import ChildChunk, ParentChunk
+from models.chunk import ChildChunk, ParentChunk
 
 class VectorStore(ABC):
     @abstractmethod
@@ -9,6 +9,11 @@ class VectorStore(ABC):
 
     @abstractmethod
     def search(self, vector: List[float], top_k: int, filters: Optional[Dict] = None) -> List[Dict]:
+        pass
+
+    @abstractmethod
+    def get_by_ids(self, chunk_ids: List[str]) -> List[Dict]:
+        """Fetch full payloads for a list of chunk_ids. Used to resolve sparse-only hits."""
         pass
 
     @abstractmethod
