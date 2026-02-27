@@ -59,7 +59,15 @@ def run_e2e_test():
         print(f"ERROR: {pdf_path} not found. Please run 'python backend/tests/create_sample_pdf.py' first.")
         return
 
-    doc_id = f"test_doc_{int(time.time())}"
+    # Using a fixed doc_id for testing to avoid accumulation of unique indices
+    doc_id = "test_sample_doc"
+    
+    # Pre-test cleanup: ensure we start with a fresh slate for this doc_id
+    print(f"\n[Cleanup] Removing existing data for {doc_id} to ensure clean test...")
+    vector_store.delete_document(doc_id)
+    bm25_store.delete(doc_id)
+    file_store.delete_document(doc_id)
+    
     print(f"\n[2/4] Starting Ingestion for '{pdf_path}' (Doc ID: {doc_id})...")
     
     ingestion_pipeline = IngestionPipeline(vector_store, bm25_store, file_store)
