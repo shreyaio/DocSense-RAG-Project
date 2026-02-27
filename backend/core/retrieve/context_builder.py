@@ -1,7 +1,8 @@
 from typing import List, Dict, Any
-from backend.storage.base import FileStore
-from backend.models.query import RetrievedContext
-from backend.models.chunk import ChunkMetadata
+from storage.base import FileStore
+from models.query import RetrievedContext
+from models.chunk import ChunkMetadata
+from config.settings import settings
 
 class ContextBuilder:
     """

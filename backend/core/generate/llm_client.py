@@ -2,7 +2,7 @@ import json
 import logging
 import httpx
 from typing import Generator, List, Dict, Any, Optional, Union
-from backend.config.settings import settings
+from config.settings import settings
 
 logger = logging.getLogger(__name__)
 

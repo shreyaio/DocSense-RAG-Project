@@ -1,8 +1,8 @@
 from typing import List, Dict, Any, Optional, Tuple
-from backend.storage.base import VectorStore, BM25Store, FileStore
-from backend.core.embed.embedder import Embedder
-from backend.models.query import QueryFilters
-from backend.config.settings import settings
+from storage.base import VectorStore, BM25Store, FileStore
+from core.embed.embedder import Embedder
+from models.query import QueryFilters
+from config.settings import settings
 import collections
 
 

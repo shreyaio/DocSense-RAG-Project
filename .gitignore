@@ -15,6 +15,13 @@ data/
 backend/data/
 # Ignore specific data files if they appear in root
 *.pkl
+sample.pdf
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.next/
 
 # IDEs
 .vscode/

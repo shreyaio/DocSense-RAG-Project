@@ -1,4 +1,4 @@
-from backend.models.query import RetrievedContext
+from models.query import RetrievedContext
 
 SYSTEM_PROMPT = """You are a document-grounded assistant.
 Rules: answer only from context, cite page numbers and sections,

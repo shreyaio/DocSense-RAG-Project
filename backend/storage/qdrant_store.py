@@ -91,13 +91,15 @@ class QdrantLocalStore(VectorStore):
             if must_clauses:
                 query_filter = rest.Filter(must=must_clauses)
 
-        results = self.client.search(
+        results = self.client.query_points(
             collection_name=self.config.collection_name,
-            query_vector=vector,
+            query=vector,
             limit=top_k,
             query_filter=query_filter,
-            search_params=rest.SearchParams(hnsw_ef=self.config.hnsw_ef)
-        )
+            search_params=rest.SearchParams(
+                hnsw_ef=self.config.hnsw_ef
+            )
+        ).points
 
         return [
             {
