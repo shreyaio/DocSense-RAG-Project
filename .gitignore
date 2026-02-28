@@ -1,31 +1,81 @@
-# Python
+# --- Python ---
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyd
+*.so
+.Python
+env/
 venv/
-.env
-backend/.env
-*.log
+pip-log.txt
+pip-delete-this-directory.txt
+.venv
 .pytest_cache/
 .coverage
 htmlcov/
+nosetests.xml
+coverage.xml
+*.pkl
+*.pb
 
-# RAG Data (Authoritative)
+# --- Node / Frontend ---
+node_modules/
+frontend/node_modules/
+.next/
+frontend/.next/
+out/
+build/
+dist/
+frontend/dist/
+.npm
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# --- Environment & Secrets (CRITICAL) ---
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+frontend/.env
+frontend/.env.local
+
+# --- RAG Storage & Local Data ---
 data/
 backend/data/
-# Ignore specific data files if they appear in root
-*.pkl
-sample.pdf
+storage/
+backend/storage/downloads/
+backend/storage/json_store/
+*.pdf
+!README.md
 
-# Frontend
-frontend/node_modules/
-frontend/dist/
-frontend/.env
-frontend/.next/
-
-# IDEs & Agent Specific
+# --- IDEs & OS ---
 .vscode/
 .idea/
-.gemini/
 .DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# --- AI Agents & Artifacts ---
+.gemini/
+.agents/
+.agent/
+_agents/
+_agent/
 *.resolved
+architecture_overview.md
+task.md
+analysis_results.md
+research_notes.md
+experiment_results.md
+*.png
+*.jpeg
+*.jpg
+!frontend/public/*.png
+!frontend/public/*.jpeg
+!frontend/public/*.jpg

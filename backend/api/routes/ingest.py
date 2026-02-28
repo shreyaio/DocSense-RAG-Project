@@ -20,6 +20,7 @@ def get_file_store(request: Request) -> FileStore:
 
 @router.post("/ingest", response_model=IngestionJob, summary="Upload a PDF and ingest it into the RAG system")
 async def ingest_file(
+    request: Request,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     pipeline: IngestionPipeline = Depends(get_ingestion_pipeline),

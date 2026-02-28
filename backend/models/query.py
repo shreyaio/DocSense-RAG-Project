@@ -48,6 +48,8 @@ class SummarizeRequest(BaseModel):
 class SummarizeResponse(BaseModel):
     doc_id: str
     mode: str
-    output: str
-    model_used: str
-    chunk_count_used: int
+    output: str | None = None
+    model_used: str | None = None
+    chunk_count_used: int | None = None
+    status: str = "success"  # "success" | "busy"
+    message: str | None = None
