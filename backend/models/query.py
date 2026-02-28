@@ -40,3 +40,14 @@ class QueryResponse(BaseModel):
     citations: list[Citation]
     model_used: str
     retrieval_stats: RetrievalStats
+
+class SummarizeRequest(BaseModel):
+    doc_id: str
+    mode: str = "summary"  # "summary" | "key_points"
+
+class SummarizeResponse(BaseModel):
+    doc_id: str
+    mode: str
+    output: str
+    model_used: str
+    chunk_count_used: int

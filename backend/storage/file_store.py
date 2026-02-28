@@ -25,7 +25,7 @@ class LocalFileStore(FileStore):
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
-    def load_parent_chunks(self, doc_id: str) -> Dict[str, ParentChunk]:
+    def load_parent_chunks(self, doc_id: str, parent_ids: Optional[List[str]] = None) -> Dict[str, ParentChunk]:
         path = os.path.join(self.parent_chunks_path, f"{doc_id}.json")
         if not os.path.exists(path):
             return {}
@@ -33,7 +33,16 @@ class LocalFileStore(FileStore):
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
             
+        if parent_ids:
+            # Only return the specific parents requested
+            return {pid: ParentChunk(**data[pid]) for pid in parent_ids if pid in data}
+            
         return {pid: ParentChunk(**p_data) for pid, p_data in data.items()}
+
+    def list_documents(self) -> List[str]:
+        if not os.path.exists(self.parent_chunks_path):
+            return []
+        return [f.replace(".json", "") for f in os.listdir(self.parent_chunks_path) if f.endswith(".json")]
 
     def save_pdf(self, doc_id: str, file_bytes: bytes) -> str:
         # For now, we use doc_id + .pdf

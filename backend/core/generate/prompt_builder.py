@@ -36,3 +36,20 @@ class PromptBuilder:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_content}
         ]
+
+    @staticmethod
+    def build_summarization_prompt(context: str, mode: str) -> list[dict]:
+        """
+        Builds messages for summarization/key-points based on document context.
+        """
+        if mode == "key_points":
+            system_msg = "You are a professional analyst. Extract the most important key insights from the context as a bulleted list. Do not include information not present in the context."
+            user_prompt = f"Context:\n---\n{context}\n---\nProvide the key points now."
+        else:
+            system_msg = "You are a professional writer. Provide a concise executive-style overview of the document based ONLY on the context. Structure in 3-5 paragraphs."
+            user_prompt = f"Context:\n---\n{context}\n---\nProvide the executive summary now."
+
+        return [
+            {"role": "system", "content": system_msg},
+            {"role": "user", "content": user_prompt}
+        ]

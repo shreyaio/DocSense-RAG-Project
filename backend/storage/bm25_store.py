@@ -1,5 +1,4 @@
 import os
-import pickle
 import json
 import numpy as np
 from typing import List, Tuple, Dict
@@ -26,25 +25,30 @@ class LocalBM25Store(BM25Store):
         # 2. Map corpus index to chunk_id
         mapping = {i: c.metadata.chunk_id for i, c in enumerate(chunks)}
         
-        # 3. Save index and mapping
-        pkl_path = os.path.join(self.base_path, f"{doc_id}.pkl")
+        # 2. Map corpus index to chunk_id
+        mapping = {i: c.metadata.chunk_id for i, c in enumerate(chunks)}
+        
+        # 3. Save corpus and mapping
+        corpus_path = os.path.join(self.base_path, f"{doc_id}_corpus.json")
         map_path = os.path.join(self.base_path, f"{doc_id}_map.json")
         
-        with open(pkl_path, "wb") as f:
-            pickle.dump(bm25, f)
+        with open(corpus_path, "w", encoding="utf-8") as f:
+            json.dump(corpus, f, ensure_ascii=False)
             
         with open(map_path, "w", encoding="utf-8") as f:
             json.dump(mapping, f, ensure_ascii=False, indent=2)
 
     def search(self, doc_id: str, query: str, top_k: int) -> List[Tuple[str, float]]:
-        pkl_path = os.path.join(self.base_path, f"{doc_id}.pkl")
+        corpus_path = os.path.join(self.base_path, f"{doc_id}_corpus.json")
         map_path = os.path.join(self.base_path, f"{doc_id}_map.json")
         
-        if not os.path.exists(pkl_path) or not os.path.exists(map_path):
+        if not os.path.exists(corpus_path) or not os.path.exists(map_path):
             return []
             
-        with open(pkl_path, "rb") as f:
-            bm25 = pickle.load(f)
+        with open(corpus_path, "r", encoding="utf-8") as f:
+            corpus = json.load(f)
+            # Rebuild safely from saved tokens (Correct for single-doc performance)
+            bm25 = BM25Okapi(corpus)
             
         with open(map_path, "r", encoding="utf-8") as f:
             mapping = json.load(f)
@@ -63,7 +67,7 @@ class LocalBM25Store(BM25Store):
         return results
 
     def delete(self, doc_id: str) -> None:
-        for suffix in [".pkl", "_map.json"]:
+        for suffix in ["_corpus.json", "_map.json"]:
             path = os.path.join(self.base_path, f"{doc_id}{suffix}")
             if os.path.exists(path):
                 os.remove(path)

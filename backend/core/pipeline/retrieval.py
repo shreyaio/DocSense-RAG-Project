@@ -98,8 +98,23 @@ class RetrievalPipeline:
         stream_mode = settings.llm.stream
         
         if stream_mode:
-            logger.info("Streaming response initiated")
-            return self.llm_client.generate(messages, stream=True)
+            logger.info("Streaming response initiated.")
+            
+            # Streaming Metadata Fix 6: Yield metadata chunk first to preserve citations/stats
+            def stream_wrapper():
+                metadata_chunk = self._assemble_response(
+                    question=request.question,
+                    answer="", # Answer is streamed
+                    contexts=contexts,
+                    stats_dict=stats_dict
+                )
+                yield metadata_chunk.model_dump_json() + "\n"
+                
+                # Note: Prefix with newline to separate from metadata in simpler frontend consumers
+                for chunk in self.llm_client.generate(messages, stream=True):
+                    yield str(chunk)
+                    
+            return stream_wrapper()
         else:
             answer = self.llm_client.generate(messages, stream=False)
             

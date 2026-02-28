@@ -21,7 +21,7 @@ class Embedder:
     def _load_model(self):
         """Loads the sentence-transformer model onto CPU."""
         if Embedder._model is None:
-            print(f"Loading embedding model: {self.config.model_name}...")
+            logger.info(f"Loading embedding model: {self.config.model_name}...")
             # We explicitly use CPU as per architecture guidelines (No Docker/Free Tier)
             Embedder._model = SentenceTransformer(self.config.model_name, device="cpu")
         self.model = Embedder._model

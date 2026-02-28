@@ -44,12 +44,16 @@ class LLMConfig(BaseModel):
     temperature: float = 0.1
     stream: bool = True
 
+class SummarizationConfig(BaseModel):
+    max_chunks: int = 10
+
 class AppSettings(BaseSettings):
     chunking: ChunkingConfig = ChunkingConfig()
     embedding: EmbeddingConfig = EmbeddingConfig()
     qdrant: QdrantConfig = QdrantConfig()
     retrieval: RetrievalConfig = RetrievalConfig()
     llm: LLMConfig = LLMConfig()
+    summarization: SummarizationConfig = SummarizationConfig()
     openrouter_api_key: str = ""
 
     model_config = SettingsConfigDict(
@@ -76,14 +80,9 @@ def load_settings(config_path: str = "backend/config/config.yaml") -> AppSetting
                 yaml_data = yaml.safe_load(f) or {}
             break
             
-    # Manually map yaml sections to our sub-models
-    return AppSettings(
-        chunking=ChunkingConfig(**yaml_data.get("chunking", {})),
-        embedding=EmbeddingConfig(**yaml_data.get("embedding", {})),
-        qdrant=QdrantConfig(**yaml_data.get("qdrant", {})),
-        retrieval=RetrievalConfig(**yaml_data.get("retrieval", {})),
-        llm=LLMConfig(**yaml_data.get("llm", {}))
-    )
+    # Explicitly pop nested keys and merge them correctly 
+    # This allows env vars to override nested yaml values (e.g. CHUNKING__PARENT_CHUNK_SIZE)
+    return AppSettings(**yaml_data)
 
 # Global settings instance
 settings = load_settings()

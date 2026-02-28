@@ -28,9 +28,13 @@
   - [x] Implement `core/generate/llm_client.py` and test OpenRouter call (Step 18)
 - [x] Section 9: Retrieval Pipeline Orchestration
   - [x] Implement `core/pipeline/retrieval.py` for full question to cited answer flow (Step 19)
-- [ ] Section 10: API Layer
-  - [ ] Implement `api/main.py` and all routes in `api/routes/` (Step 20)
-  - [ ] Test all endpoints via curl/Postman 
+- [ ] Section 10: API Layer Implementation (Step 20)
+  - [ ] Implement `backend/api/main.py` (App factory, Lifespan initialization, CORS, Health Check)
+  - [ ] Implement `backend/api/routes/ingest.py` (POST /ingest, deterministic doc_id, sync def)
+  - [ ] Implement `backend/api/routes/query.py` (POST /query, sync def)
+  - [ ] Implement `backend/api/routes/documents.py` (GET /documents, atomic DELETE /documents/{doc_id})
+  - [ ] Implement `backend/api/routes/summarize.py` (POST /api/summarize, executive summary/key points modes)
+  - [ ] Verify API layer via curl/Postman
 - [ ] Section 11: Frontend Development
   - [ ] Scaffold React app and configure Tailwind (Step 21)
   - [ ] Implement API client and React components (`UploadPanel`, `ChatWindow`, etc.)

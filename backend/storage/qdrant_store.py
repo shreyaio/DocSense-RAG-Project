@@ -6,6 +6,9 @@ from models.chunk import ChildChunk
 from storage.base import VectorStore
 from config.settings import settings
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def _to_uuid(chunk_id: str) -> str:
@@ -27,7 +30,7 @@ class QdrantLocalStore(VectorStore):
 
     def _ensure_collection(self):
         if not self.collection_exists():
-            print(f"Creating Qdrant collection: {self.config.collection_name}")
+            logger.info(f"Creating Qdrant collection: {self.config.collection_name}")
             self.client.create_collection(
                 collection_name=self.config.collection_name,
                 vectors_config=rest.VectorParams(
@@ -78,7 +81,12 @@ class QdrantLocalStore(VectorStore):
             must_clauses = []
             for key, value in filters.items():
                 if value is not None:
-                    if isinstance(value, list):
+                    if key == "page_range" and isinstance(value, list) and len(value) == 2:
+                        must_clauses.append(rest.FieldCondition(
+                            key="page_number",
+                            range=rest.Range(gte=value[0], lte=value[1])
+                        ))
+                    elif isinstance(value, list):
                         must_clauses.append(rest.FieldCondition(
                             key=key,
                             match=rest.MatchAny(any=value)
