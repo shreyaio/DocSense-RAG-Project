@@ -30,15 +30,11 @@ class HybridSearcher:
         # 1. Dense Search Arm
         query_vector = self.embedder.embed_query(question)
 
-        # Prepare Qdrant filters (Multi-document safe)
-        dense_filters = {"doc_id": doc_ids} if doc_ids else None
-
-        if filters and filters.page_range:
-            # Simple page filter for dense arm if single page
-            if filters.page_range[0] == filters.page_range[1]:
-                if not dense_filters:
-                    dense_filters = {}
-                dense_filters["page_number"] = filters.page_range[0]
+        # Prepare filters for VectorStore (Dense Arm)
+        # Combine doc_ids list with any attribute filters from QueryAnalyser
+        dense_filters = filters.model_dump() if filters else {}
+        if doc_ids:
+            dense_filters["doc_id"] = doc_ids
 
         dense_results = self.vector_store.search(
             vector=query_vector,
@@ -82,7 +78,22 @@ class HybridSearcher:
 
         # 6. Assemble final result list and resolve child text
         final_results = []
-        parent_cache = {} # Cache for parent chunks within this search call
+        
+        # Memory Expansion Fix 5: Group unique parent_ids per doc_id for efficient loading
+        docs_to_resolve = collections.defaultdict(set)
+        for c_id, rrf_score in top_candidates:
+            if c_id in payloads:
+                payload = payloads[c_id]
+                d_id = payload.get("doc_id")
+                p_id = payload.get("parent_id")
+                if d_id and p_id:
+                    docs_to_resolve[d_id].add(p_id)
+
+        # Batch load only explicitly required parents
+        parent_cache = {}
+        if self.file_store:
+            for d_id, p_ids in docs_to_resolve.items():
+                parent_cache[d_id] = self.file_store.load_parent_chunks(d_id, parent_ids=list(p_ids))
 
         for c_id, rrf_score in top_candidates:
             if c_id in payloads:
@@ -94,14 +105,11 @@ class HybridSearcher:
                     doc_id = payload.get("doc_id")
                     parent_id = payload.get("parent_id")
                     if doc_id and parent_id:
-                        if doc_id not in parent_cache:
-                            parent_cache[doc_id] = self.file_store.load_parent_chunks(doc_id)
-                        
-                        parent = parent_cache[doc_id].get(parent_id)
+                        parent_map = parent_cache.get(doc_id, {})
+                        parent = parent_map.get(parent_id)
                         if parent:
-                            # Note: Accurate slicing requires parent char_start, which is missing.
-                            # As a fallback, we use the parent text for reranking if exact slice is not possible
-                            # without schema modification. This adheres to "No child text in Qdrant".
+                            # Note: SSOT requires parent text for reranking if child slice is unavailable.
+                            # "Do NOT store parent chunk text inside Qdrant payload — FileStore only."
                             text = parent.text
 
                 final_results.append({

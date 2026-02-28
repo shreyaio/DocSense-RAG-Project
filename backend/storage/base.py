@@ -43,7 +43,12 @@ class FileStore(ABC):
         pass
 
     @abstractmethod
-    def load_parent_chunks(self, doc_id: str) -> Dict[str, ParentChunk]:
+    def load_parent_chunks(self, doc_id: str, parent_ids: Optional[List[str]] = None) -> Dict[str, ParentChunk]:
+        pass
+
+    @abstractmethod
+    def list_documents(self) -> List[str]:
+        """Returns a list of all indexed document IDs."""
         pass
 
     @abstractmethod

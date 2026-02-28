@@ -38,3 +38,6 @@ llm:
   max_tokens: 1024
   temperature: 0.1
   stream: true
+
+summarization:
+  max_chunks: 10

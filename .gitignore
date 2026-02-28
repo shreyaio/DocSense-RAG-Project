@@ -23,8 +23,9 @@ frontend/dist/
 frontend/.env
 frontend/.next/
 
-# IDEs
+# IDEs & Agent Specific
 .vscode/
 .idea/
 .gemini/
 .DS_Store
+*.resolved

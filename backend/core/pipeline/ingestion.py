@@ -48,11 +48,7 @@ class IngestionPipeline:
 
             update_progress(5, "Starting processing")
 
-            # Save PDF to persistence storage
-            with open(file_path, "rb") as f:
-                file_bytes = f.read()
-            self.file_store.save_pdf(doc_id, file_bytes)
-            update_progress(8, "PDF saved to storage")
+            update_progress(5, "Starting processing")
 
             # 1. Parsing
             update_progress(10, "Parsing PDF layout")

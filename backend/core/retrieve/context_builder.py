@@ -19,25 +19,36 @@ class ContextBuilder:
         Converts search results into full context by fetching parent text.
         Deduplicates by parent_id.
         """
-        # Fix 4: Reset cache per request — prevents memory growth and stale data.
+        # Memory Expansion Fix 5: Pre-collect unique parent_ids per doc_id for batched loading
+        docs_to_parents = {}
+        for res in reranked_results:
+            m = ChunkMetadata(**res["metadata"])
+            d_id, p_id = m.doc_id, m.parent_id
+            if d_id not in docs_to_parents:
+                docs_to_parents[d_id] = set()
+            docs_to_parents[d_id].add(p_id)
+        
+        # Reset cache and batch load
         self._parent_cache = {}
+        for d_id, p_ids in docs_to_parents.items():
+            self._parent_cache[d_id] = self.file_store.load_parent_chunks(d_id, parent_ids=list(p_ids))
+
         final_context = []
         seen_parent_ids = set()
         
         for res in reranked_results:
-            metadata_dict = res["metadata"]
-            # Convert dict back to ChunkMetadata
-            metadata = ChunkMetadata(**metadata_dict)
-            
+            metadata = ChunkMetadata(**res["metadata"])
             parent_id = metadata.parent_id
             doc_id = metadata.doc_id
             
-            # Avoid redundant context if multiple children point to same parent
             if parent_id in seen_parent_ids:
                 continue
                 
-            # Fetch parent text
-            parent_text = self._get_parent_text(doc_id, parent_id)
+            # Fetch from pre-loaded cache
+            parent_text = ""
+            doc_cache = self._parent_cache.get(doc_id, {})
+            if parent_id in doc_cache:
+                parent_text = doc_cache[parent_id].text
             
             if parent_text:
                 final_context.append(RetrievedContext(

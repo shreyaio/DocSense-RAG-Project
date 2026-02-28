@@ -1,6 +1,9 @@
 from typing import List, Dict, Any
 from sentence_transformers import CrossEncoder
 from config.settings import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Reranker:
@@ -20,7 +23,7 @@ class Reranker:
         if Reranker._model is None:
             # Fix 2: Load model name from config, never hardcode it
             model_name = self.config.reranker_model
-            print(f"Loading reranker model: {model_name}...")
+            logger.info(f"Loading reranker model: {model_name}...")
             Reranker._model = CrossEncoder(model_name, device="cpu")
         self.model = Reranker._model
 
