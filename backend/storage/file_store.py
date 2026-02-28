@@ -1,6 +1,6 @@
 import os
 import json
-from typing import List, Dict
+from typing import List, Dict, Optional
 from models.chunk import ParentChunk
 from storage.base import FileStore
 

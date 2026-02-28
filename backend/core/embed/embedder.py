@@ -1,9 +1,12 @@
+import logging
 from typing import List
 import torch
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from models.chunk import ChildChunk
 from config.settings import settings
+
+logger = logging.getLogger(__name__)
 
 class Embedder:
     """

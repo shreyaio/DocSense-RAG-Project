@@ -38,8 +38,8 @@ class RetrievalConfig(BaseModel):
 class LLMConfig(BaseModel):
     provider: str = "openrouter"
     base_url: str = "https://openrouter.ai/api/v1"
-    model: str = "mistralai/mistral-7b-instruct"
-    fallback_model: str = "google/gemma-3-27b-it"
+    model: str = "mistralai/mistral-small-3.1-24b-instruct:free"
+    fallback_model: str = "google/gemma-3-27b-it:free"
     max_tokens: int = 1024
     temperature: float = 0.1
     stream: bool = True
