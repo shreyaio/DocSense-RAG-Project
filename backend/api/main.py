@@ -1,3 +1,4 @@
+import os
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -68,10 +69,18 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Global CORS Configuration (Minimal for demo)
+# CORS Configuration (Production-safe Origins)
+frontend_url = os.getenv("FRONTEND_URL")
+if frontend_url:
+    # Production deployment origin
+    origins = [frontend_url]
+else:
+    # Default development origins
+    origins = ["http://localhost:3000", "http://localhost:5173"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"], # Common frontend ports
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

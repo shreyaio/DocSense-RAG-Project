@@ -108,11 +108,28 @@ class RetrievalPipeline:
                     contexts=contexts,
                     stats_dict=stats_dict
                 )
+                logger.debug(f"Streaming metadata: {len(metadata_chunk.model_dump_json())} bytes")
                 yield metadata_chunk.model_dump_json() + "\n"
+                
+                # Collect streamed chunks to build final answer
+                full_answer = ""
                 
                 # Note: Prefix with newline to separate from metadata in simpler frontend consumers
                 for chunk in self.llm_client.generate(messages, stream=True):
-                    yield str(chunk)
+                    chunk_str = str(chunk)
+                    logger.debug(f"Streaming chunk received: {repr(chunk_str[:50])}")
+                    full_answer += chunk_str
+                    yield chunk_str
+                
+                # FIX: Send final QueryResponse with complete answer at stream end
+                logger.debug(f"Stream complete. Assembled answer: {len(full_answer)} chars")
+                final_response = self._assemble_response(
+                    question=request.question,
+                    answer=full_answer,
+                    contexts=contexts,
+                    stats_dict=stats_dict
+                )
+                yield final_response.model_dump_json() + "\n"
                     
             return stream_wrapper()
         else:

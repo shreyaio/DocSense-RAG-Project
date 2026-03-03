@@ -77,8 +77,8 @@ export default function ChatWindow({ docId, onCitationsUpdate }: ChatWindowProps
                 const updated = [...prev];
                 const last = updated[updated.length - 1];
                 if (last.role === "assistant") {
-                    // If non-streaming, set the full answer
-                    if (!last.content) last.content = response.answer;
+                    // Replace streamed content with final clean answer
+                    last.content = response.answer;
                     last.citations = response.citations;
                     last.isStreaming = false;
                 }

@@ -22,6 +22,7 @@ class QdrantConfig(BaseModel):
     mode: str = "local"
     local_path: str = "./data/qdrant_store"
     cloud_url: str = ""
+    api_key: str = ""
     collection_name: str = "rag_chunks"
     hnsw_m: int = 16
     hnsw_ef_construct: int = 100
@@ -36,12 +37,9 @@ class RetrievalConfig(BaseModel):
     reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
 class LLMConfig(BaseModel):
-    provider: str = "openrouter"
-    base_url: str = "https://openrouter.ai/api/v1"
-    model: str = "mistralai/mistral-small-3.1-24b-instruct:free"
-    fallback_model: str = "google/gemma-3-27b-it:free"
+    model: str = "llama-3.3-70b-versatile"
+    temperature: float = 0.2
     max_tokens: int = 1024
-    temperature: float = 0.1
     stream: bool = True
 
 class SummarizationConfig(BaseModel):
@@ -54,7 +52,9 @@ class AppSettings(BaseSettings):
     retrieval: RetrievalConfig = RetrievalConfig()
     llm: LLMConfig = LLMConfig()
     summarization: SummarizationConfig = SummarizationConfig()
-    openrouter_api_key: str = ""
+    groq_api_key: str = os.getenv("GROQ_API_KEY", "")
+    qdrant_url: str = ""
+    qdrant_api_key: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

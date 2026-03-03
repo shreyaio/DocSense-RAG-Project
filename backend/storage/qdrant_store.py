@@ -25,7 +25,10 @@ class QdrantLocalStore(VectorStore):
 
     def __init__(self):
         self.config = settings.qdrant
-        self.client = QdrantClient(path=self.config.local_path)
+        self.client = QdrantClient(
+            url=settings.qdrant_url,
+            api_key=settings.qdrant_api_key
+        )
         self._ensure_collection()
 
     def _ensure_collection(self):
