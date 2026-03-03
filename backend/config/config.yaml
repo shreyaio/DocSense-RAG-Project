@@ -14,9 +14,8 @@ embedding:
   normalise: true
 
 qdrant:
-  mode: "local"                     # "local" | "cloud"
-  local_path: "./data/qdrant_store"
-  cloud_url: ""                     # fill when upgrading to cloud
+  # Production Cloud-only configuration
+  # URL and API key sourced from environment variables: QDRANT_URL, QDRANT_API_KEY
   collection_name: "rag_chunks"
   hnsw_m: 16
   hnsw_ef_construct: 100

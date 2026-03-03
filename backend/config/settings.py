@@ -19,10 +19,6 @@ class EmbeddingConfig(BaseModel):
     normalise: bool = True
 
 class QdrantConfig(BaseModel):
-    mode: str = "local"
-    local_path: str = "./data/qdrant_store"
-    cloud_url: str = ""
-    api_key: str = ""
     collection_name: str = "rag_chunks"
     hnsw_m: int = 16
     hnsw_ef_construct: int = 100
@@ -53,8 +49,8 @@ class AppSettings(BaseSettings):
     llm: LLMConfig = LLMConfig()
     summarization: SummarizationConfig = SummarizationConfig()
     groq_api_key: str = os.getenv("GROQ_API_KEY", "")
-    qdrant_url: str = ""
-    qdrant_api_key: str = ""
+    qdrant_url: str = os.getenv("QDRANT_URL", "")
+    qdrant_api_key: str = os.getenv("QDRANT_API_KEY", "")
 
     model_config = SettingsConfigDict(
         env_file=".env",

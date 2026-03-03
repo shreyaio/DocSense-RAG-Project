@@ -20,16 +20,43 @@ def _to_uuid(chunk_id: str) -> str:
 
 class QdrantLocalStore(VectorStore):
     """
-    Implements VectorStore using Qdrant in local storage mode.
+    Implements VectorStore using Qdrant Cloud.
+    Requires QDRANT_URL and QDRANT_API_KEY environment variables.
     """
 
     def __init__(self):
         self.config = settings.qdrant
-        self.client = QdrantClient(
-            url=settings.qdrant_url,
-            api_key=settings.qdrant_api_key
-        )
-        self._ensure_collection()
+        
+        # Validate required environment variables
+        if not settings.qdrant_url:
+            raise RuntimeError(
+                "QDRANT_URL environment variable is not set. "
+                "Set it before deploying to production."
+            )
+        if not settings.qdrant_api_key:
+            raise RuntimeError(
+                "QDRANT_API_KEY environment variable is not set. "
+                "Set it before deploying to production."
+            )
+        
+        try:
+            self.client = QdrantClient(
+                url=settings.qdrant_url,
+                api_key=settings.qdrant_api_key
+            )
+            self._ensure_collection()
+        except RuntimeError:
+            # Re-raise our own validation errors
+            raise
+        except Exception as e:
+            logger.error(
+                "Qdrant Cloud initialization failed. "
+                "Ensure QDRANT_URL and QDRANT_API_KEY are correct and Qdrant Cloud is reachable.",
+                exc_info=True
+            )
+            raise RuntimeError(
+                f"Failed to connect to Qdrant Cloud: {str(e)}"
+            ) from e
 
     def _ensure_collection(self):
         if not self.collection_exists():
