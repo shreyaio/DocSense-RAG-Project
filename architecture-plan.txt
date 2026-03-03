@@ -1,0 +1,751 @@
+# 🏆 RAG SYSTEM — SINGLE SOURCE OF TRUTH
+
+> This document is the authoritative reference for the entire project.
+> All code generation, architecture decisions, and implementation must strictly follow this document.
+> No deviation is allowed unless explicitly approved and this document is updated first.
+
+---
+
+## WHAT WE ARE BUILDING
+
+A production-grade RAG (Retrieval Augmented Generation) web application.
+- Phase 1: Single PDF, local storage, single user
+- Designed so multi-PDF, multi-user, multi-modal requires zero rewrites — only additions
+- Every component is behind an abstraction layer so scaling touches config, not logic
+
+---
+
+## FINAL STACK
+
+| Layer | Tool | Notes |
+|---|---|---|
+| Backend | FastAPI | Async, automatic docs, perfect for AI pipelines |
+| Frontend | React + Tailwind | Component-based, deployable to Vercel |
+| PDF Parsing | PyMuPDF + pdfplumber | Layout-aware + table detection |
+| Chunking | Custom pipeline | RecursiveCharacterTextSplitter + parent-child |
+| Embedding | BAAI/bge-large-en-v1.5 | Best free CPU model, MTEB-proven |
+| Vector Store | Qdrant local file → Qdrant Cloud (same API) | No Docker, no server |
+| Sparse Search | rank-bm25 | Exact match, numbers, rare terms |
+| Re-ranker | cross-encoder/ms-marco-MiniLM-L-6-v2 | CPU-friendly, high accuracy |
+| LLM | OpenRouter free tier | Model-swappable via config only |
+| Async Jobs | FastAPI BackgroundTasks → Celery later | Zero frontend change on upgrade |
+| Deployment | Backend → Render, Frontend → Vercel | Both free tier |
+
+---
+
+## FOLDER STRUCTURE
+
+This is the authoritative layout. Every file has exactly one responsibility.
+```
+rag-system/
+│
+├── backend/
+│   │
+│   ├── api/                          # HTTP layer only — no business logic here
+│   │   ├── __init__.py
+│   │   ├── main.py                   # FastAPI app factory, CORS, middleware, router registration
+│   │   └── routes/
+│   │       ├── __init__.py
+│   │       ├── ingest.py             # POST /ingest, GET /ingest/status/{job_id}
+│   │       ├── query.py              # POST /query
+│   │       └── documents.py          # GET /documents, DELETE /documents/{doc_id}
+│   │
+│   ├── core/                         # Pure business logic — zero FastAPI imports
+│   │   ├── __init__.py
+│   │   │
+│   │   ├── pipeline/
+│   │   │   ├── __init__.py
+│   │   │   ├── ingestion.py          # Orchestrator: parse→chunk→embed→store
+│   │   │   └── retrieval.py          # Orchestrator: search→rerank→expand→generate
+│   │   │
+│   │   ├── parse/
+│   │   │   ├── __init__.py
+│   │   │   ├── pdf_parser.py         # PyMuPDF pass1 + pdfplumber pass2, outputs ParsedBlock list
+│   │   │   └── structure_detector.py # Heading tree, ToC extraction, header/footer suppression
+│   │   │
+│   │   ├── chunk/
+│   │   │   ├── __init__.py
+│   │   │   ├── chunker.py            # Section-boundary split → parent chunks → child chunks
+│   │   │   └── metadata_builder.py   # Builds full ChunkMetadata object per child chunk
+│   │   │
+│   │   ├── embed/
+│   │   │   ├── __init__.py
+│   │   │   └── embedder.py           # BGE model loader, batched embed, L2 normalisation
+│   │   │
+│   │   ├── retrieve/
+│   │   │   ├── __init__.py
+│   │   │   ├── query_analyser.py     # Detect page refs, section mentions → filter params
+│   │   │   ├── hybrid_search.py      # Dense + BM25 parallel search + RRF fusion
+│   │   │   ├── reranker.py           # Cross-encoder scoring, top-k selection
+│   │   │   └── context_builder.py    # Parent fetch, sibling expansion, dedup, assembly
+│   │   │
+│   │   └── generate/
+│   │       ├── __init__.py
+│   │       ├── prompt_builder.py     # Metadata-prefixed context + system prompt construction
+│   │       └── llm_client.py         # OpenRouter API, streaming, model-agnostic
+│   │
+│   ├── storage/                      # All storage behind abstract interfaces
+│   │   ├── __init__.py
+│   │   ├── base.py                   # VectorStore ABC, FileStore ABC, BM25Store ABC
+│   │   ├── qdrant_store.py           # Implements VectorStore — local file mode now
+│   │   ├── bm25_store.py             # Implements BM25Store — pickle + corpus JSON
+│   │   └── file_store.py             # Implements FileStore — local disk now, S3 interface ready
+│   │
+│   ├── models/                       # Pydantic schemas — shared contract across all layers
+│   │   ├── __init__.py
+│   │   ├── document.py               # DocumentRecord, IngestionStatus, IngestionJob
+│   │   ├── chunk.py                  # ParsedBlock, ChildChunk, ParentChunk, ChunkMetadata
+│   │   └── query.py                  # QueryRequest, QueryResponse, Citation, RetrievedContext
+│   │
+│   ├── config/
+│   │   ├── __init__.py
+│   │   ├── settings.py               # Pydantic BaseSettings — reads .env, typed config
+│   │   └── config.yaml               # All tunable parameters — single control panel
+│   │
+│   ├── tests/
+│   │   ├── test_parsing.py
+│   │   ├── test_chunking.py
+│   │   ├── test_embedding.py
+│   │   ├── test_retrieval.py
+│   │   └── test_api.py
+│   │
+│   ├── data/                         # Runtime data — gitignored entirely
+│   │   ├── uploads/                  # Raw uploaded PDFs
+│   │   ├── qdrant_store/             # Qdrant local persistence
+│   │   ├── bm25_indexes/             # Per-doc BM25 pickles + corpus JSON
+│   │   └── parent_chunks/            # Per-doc parent chunk JSON stores
+│   │
+│   ├── requirements.txt
+│   ├── .env.example
+│   └── Dockerfile                    # For Render deployment only
+│
+└── frontend/
+    ├── src/
+    │   ├── components/
+    │   │   ├── UploadPanel.jsx        # Drag & drop upload + ingestion progress bar
+    │   │   ├── DocumentList.jsx       # List indexed docs, delete button per doc
+    │   │   ├── ChatWindow.jsx         # Query input, conversation history, streaming response
+    │   │   ├── SourcePanel.jsx        # Citation cards: page, section, chunk text preview
+    │   │   └── IngestionStatus.jsx    # Polls /ingest/status/{job_id}, shows % progress
+    │   │
+    │   ├── api/
+    │   │   └── client.js              # All fetch/SSE calls — single source for API comms
+    │   │
+    │   ├── App.jsx
+    │   └── main.jsx
+    │
+    ├── package.json
+    └── tailwind.config.js
+```
+
+---
+
+## DATA MODELS — AUTHORITATIVE CONTRACTS
+
+These field names are locked. Do not rename, remove, or add fields without updating this document.
+
+### models/chunk.py
+```python
+class ParsedBlock(BaseModel):
+    text: str
+    page_number: int
+    block_type: str                  # "text" | "table" | "caption" | "heading"
+    font_size: float | None
+    font_name: str | None
+    bounding_box: list[float] | None # [x0, y0, x1, y1]
+    section_path: str | None         # "Chapter 3 > 3.2 > 3.2.1"
+    heading_level: int | None        # 1 | 2 | 3 | None
+
+class ChunkMetadata(BaseModel):
+    # Identity
+    chunk_id: str                    # sha256(doc_id + str(page_number) + str(char_start))
+    parent_id: str
+    prev_chunk_id: str | None        # None only for first chunk of document
+    next_chunk_id: str | None        # None only for last chunk of document
+    # Source location
+    doc_id: str
+    source_file: str
+    page_number: int                 # first page of chunk
+    page_range: list[int]            # always two ints: [42, 42] or [42, 43]
+    char_start: int
+    char_end: int
+    # Document structure
+    section_title: str | None
+    subsection_title: str | None
+    heading_level: int | None
+    section_path: str | None         # "Chapter 3 > 3.2 Lipid Oxidation"
+    # Chunk properties
+    block_type: str                  # "text" | "table" | "caption"
+    token_count: int                 # child chunk token count
+    chunk_index: int                 # absolute position in document
+    total_chunks: int                # total child chunks in this document
+    is_near_heading: bool            # True if within 2 chunks of a heading block
+    chunk_level: str                 # always "child"
+    # Indexing info
+    embedding_model: str
+    created_at: str                  # ISO 8601 UTC
+
+class ChildChunk(BaseModel):
+    metadata: ChunkMetadata
+    text: str
+    embedding: list[float] | None    # None before embedding step
+
+class ParentChunk(BaseModel):
+    parent_id: str
+    doc_id: str
+    text: str
+    page_range: list[int]
+    section_path: str | None
+    child_ids: list[str]
+```
+
+### models/document.py
+```python
+class IngestionStatus(str, Enum):
+    pending = "pending"
+    processing = "processing"
+    completed = "completed"
+    failed = "failed"
+
+class IngestionJob(BaseModel):
+    job_id: str
+    doc_id: str
+    status: IngestionStatus
+    progress: int                    # 0–100
+    message: str
+    created_at: str
+    completed_at: str | None
+
+class DocumentRecord(BaseModel):
+    doc_id: str
+    filename: str
+    file_path: str
+    page_count: int
+    total_chunks: int
+    indexed_at: str
+    status: IngestionStatus
+    embedding_model: str
+```
+
+### models/query.py
+```python
+class QueryFilters(BaseModel):
+    page_range: list[int] | None     # [start_page, end_page]
+    section_title: str | None
+    block_type: str | None
+
+class QueryRequest(BaseModel):
+    question: str
+    doc_ids: list[str] | None        # None = search all documents
+    top_k: int = 5
+    filters: QueryFilters | None
+
+class Citation(BaseModel):
+    doc_id: str
+    source_file: str
+    page_number: int
+    page_range: list[int]
+    section_path: str | None
+    chunk_text_preview: str          # first 200 chars of parent chunk
+    relevance_score: float
+
+class RetrievedContext(BaseModel):
+    child_chunk_id: str
+    parent_text: str
+    metadata: ChunkMetadata
+    rerank_score: float
+
+class RetrievalStats(BaseModel):
+    dense_hits: int
+    sparse_hits: int
+    fused_candidates: int
+    reranked_from: int
+    final_count: int
+
+class QueryResponse(BaseModel):
+    question: str
+    answer: str
+    citations: list[Citation]
+    model_used: str
+    retrieval_stats: RetrievalStats
+```
+
+---
+
+## CONFIG.YAML — SINGLE CONTROL PANEL
+```yaml
+chunking:
+  parent_chunk_size: 512            # tokens
+  parent_chunk_overlap: 64
+  child_chunk_size: 128
+  child_chunk_overlap: 16
+  min_chunk_tokens: 40
+  separators: ["\n\n", "\n", ". ", " "]
+
+embedding:
+  model_name: "BAAI/bge-large-en-v1.5"
+  batch_size: 32
+  vector_dim: 1024
+  query_prefix: "Represent this sentence for searching relevant passages: "
+  normalise: true
+
+qdrant:
+  mode: "local"                     # "local" | "cloud"
+  local_path: "./data/qdrant_store"
+  cloud_url: ""                     # fill when upgrading to cloud
+  collection_name: "rag_chunks"
+  hnsw_m: 16
+  hnsw_ef_construct: 100
+  hnsw_ef: 64                       # query-time ef — higher = more accurate
+
+retrieval:
+  dense_top_k: 20
+  sparse_top_k: 20
+  rrf_k: 60
+  rerank_top_k: 20
+  final_top_k: 5
+
+llm:
+  provider: "openrouter"
+  model: "mistralai/mistral-7b-instruct:free"
+  fallback_model: "google/gemma-3-27b-it:free"
+  max_tokens: 1024
+  temperature: 0.1
+  stream: true
+```
+
+---
+
+## STORAGE INTERFACES — AUTHORITATIVE CONTRACTS
+```python
+# storage/base.py
+
+class VectorStore(ABC):
+    def upsert(self, chunks: list[ChildChunk]) -> None: ...
+    def search(self, vector: list[float], top_k: int, filters: dict | None) -> list[SearchResult]: ...
+    def delete_document(self, doc_id: str) -> None: ...
+    def collection_exists(self) -> bool: ...
+
+class BM25Store(ABC):
+    def build(self, doc_id: str, chunks: list[ChildChunk]) -> None: ...
+    def search(self, doc_id: str, query: str, top_k: int) -> list[tuple[str, float]]: ...
+    def delete(self, doc_id: str) -> None: ...
+
+class FileStore(ABC):
+    def save_parent_chunks(self, doc_id: str, parents: list[ParentChunk]) -> None: ...
+    def load_parent_chunks(self, doc_id: str) -> dict[str, ParentChunk]: ...
+    def save_pdf(self, doc_id: str, file_bytes: bytes) -> str: ...
+    def delete_document(self, doc_id: str) -> None: ...
+```
+
+Implementations today: `QdrantLocalStore`, `LocalBM25Store`, `LocalFileStore`
+Upgrade path: implement the same interface, change one line in settings.
+
+---
+
+## API ENDPOINTS — AUTHORITATIVE CONTRACT
+```
+POST   /ingest
+       Body: multipart/form-data { file: PDF }
+       Returns: { job_id: str, doc_id: str, message: str }
+       Behaviour: saves file, creates IngestionJob, dispatches BackgroundTask, returns immediately
+
+GET    /ingest/status/{job_id}
+       Returns: IngestionJob
+       Behaviour: frontend polls this to update progress bar
+
+GET    /documents
+       Returns: list[DocumentRecord]
+
+DELETE /documents/{doc_id}
+       Returns: { success: bool, message: str }
+       Behaviour: removes from Qdrant, deletes BM25 index, deletes parent store, deletes uploaded file
+
+POST   /query
+       Body: QueryRequest
+       Returns: QueryResponse (JSON) or SSE stream if stream=true in config
+       Behaviour: if retrieval returns zero results, returns "not found" without calling LLM
+
+GET    /health
+       Returns: { status: str, qdrant_ok: bool, models_loaded: bool }
+```
+
+---
+
+## FULL PIPELINE FLOWS
+
+### Ingestion Pipeline
+```
+POST /ingest (PDF binary)
+  └─ [api/routes/ingest.py]
+       Validate file type + size
+       Generate doc_id = sha256(filename + timestamp)
+       Save PDF via FileStore.save_pdf()
+       Create IngestionJob (status: pending)
+       Dispatch to BackgroundTasks → core/pipeline/ingestion.py
+       Return { job_id, doc_id } immediately
+
+  └─ [core/pipeline/ingestion.py]  ← runs in background
+       progress=5%  → status=processing
+
+  └─ [core/parse/pdf_parser.py]
+       Pass 1 — PyMuPDF:
+         Per page: extract text blocks with bbox, font_size, font_name
+         Flag font_size > median → heading candidate
+         Detect repeated blocks at same Y across 3+ pages → suppress as header/footer
+       Pass 2 — pdfplumber:
+         Detect table bounding boxes per page
+         Blocks overlapping table bbox → block_type=table, extract as markdown
+       Output: list[ParsedBlock]
+       progress=25%
+
+  └─ [core/parse/structure_detector.py]
+       Try fitz.get_toc() → use native ToC if available
+       Otherwise infer H1/H2/H3 from relative font sizes
+       Build section tree
+       Assign section_path to every ParsedBlock
+       Output: enriched list[ParsedBlock] + section_map dict
+       progress=35%
+
+  └─ [core/chunk/chunker.py]
+       For each section boundary group:
+         Apply RecursiveCharacterTextSplitter → parent chunks (512 tok, 64 overlap)
+         For each parent: subdivide → child chunks (128 tok, 16 overlap)
+         Tables → single atomic child + parent, never split
+         Short blocks < 40 tokens → merge with next sibling
+         Assign prev_chunk_id / next_chunk_id across all children
+       Output: list[ChildChunk], list[ParentChunk]
+       progress=50%
+
+  └─ [core/chunk/metadata_builder.py]
+       For each child chunk:
+         chunk_id = sha256(doc_id + str(page_number) + str(char_start))
+         Populate all ChunkMetadata fields
+         Compute is_near_heading
+       Output: list[ChildChunk with complete metadata]
+       progress=55%
+
+  └─ [core/embed/embedder.py]
+       Load BAAI/bge-large-en-v1.5 (cached after first load)
+       Embed child chunk texts in batches of 32
+       L2-normalise each embedding vector
+       Attach embeddings to ChildChunk objects
+       Output: list[ChildChunk with embeddings]
+       progress=80%
+
+  └─ [storage/qdrant_store.py]
+       Create collection if not exists (dim=1024, cosine, HNSW config from config.yaml)
+       Create payload indexes: page_number, section_title, block_type, doc_id
+       Upsert all child chunks: vector + full metadata payload
+
+  └─ [storage/bm25_store.py]
+       Build BM25Okapi corpus from child chunk texts in chunk_index order
+       Save {corpus_index: chunk_id} mapping as JSON
+       Pickle BM25 object to ./data/bm25_indexes/{doc_id}.pkl
+
+  └─ [storage/file_store.py]
+       Serialise ParentChunk list → ./data/parent_chunks/{doc_id}.json
+
+       progress=100% → status=completed
+       On any error: status=failed, message=error details
+```
+
+### Retrieval Pipeline
+```
+POST /query (QueryRequest)
+  └─ [api/routes/query.py]
+       Validate QueryRequest
+       Call core/pipeline/retrieval.py
+       Return QueryResponse
+
+  └─ [core/pipeline/retrieval.py]  ← orchestrator
+
+  └─ [core/retrieve/query_analyser.py]
+       Scan question for:
+         "page X" / "page X to Y" → page_range filter
+         Section name fuzzy match against section_map → section_title filter
+         doc_ids from request → always applied if provided
+       Output: filter_params dict (may be empty)
+
+  └─ [core/retrieve/hybrid_search.py]  ← dense + sparse run independently
+
+       DENSE ARM:
+         Prepend BGE query prefix to question text
+         Embed with BGE model (same cached instance)
+         L2-normalise query vector
+         Qdrant search: top dense_top_k, apply filter_params
+         Returns: list[(chunk_id, cosine_score, metadata)]
+
+       SPARSE ARM:
+         Load BM25 index for each requested doc_id
+         Tokenise query
+         BM25.get_scores() → top sparse_top_k via corpus_index→chunk_id map
+         Returns: list[(chunk_id, bm25_score)]
+
+       RRF FUSION:
+         rrf_score = 1/(rrf_k + rank_dense) + 1/(rrf_k + rank_sparse)
+         Chunks in one arm only get 0 for the missing arm rank
+         Sort by rrf_score descending → top 20 fused candidates
+
+  └─ [core/retrieve/reranker.py]
+       Load cross-encoder/ms-marco-MiniLM-L-6-v2 (cached)
+       Score each (question, child_chunk_text) pair — batched, CPU
+       Sort by score → keep top final_top_k
+       Output: list[RetrievedContext] with rerank_score
+
+  └─ [core/retrieve/context_builder.py]
+       For each of top 5 re-ranked child chunks:
+         Fetch parent from FileStore.load_parent_chunks()
+         If chunk is near section boundary: also fetch sibling child text
+         Deduplicate: two children sharing parent_id → include parent once
+       Output: list[RetrievedContext] — max 5 unique parents with metadata
+
+       If output is empty → return QueryResponse with answer="not found", skip LLM
+
+  └─ [core/generate/prompt_builder.py]
+       Build context string with metadata headers:
+         "[SOURCE: {source_file} | Page {page_range} | {section_path}]
+          {parent_text}"
+       Build system prompt:
+         "You are a document-grounded assistant.
+          Rules: answer only from context, cite page numbers and sections,
+          say 'not found in document' if absent, do not speculate."
+       Output: messages list for OpenRouter API
+
+  └─ [core/generate/llm_client.py]
+       POST to OpenRouter /v1/chat/completions
+       Model from config.yaml with fallback_model on failure
+       Stream tokens via SSE if config.stream=true
+       Output: answer string
+
+  └─ [api/routes/query.py]
+       Assemble QueryResponse:
+         answer, citations, model_used, retrieval_stats, question
+       Return to frontend
+```
+
+---
+
+## FRONTEND LAYOUT
+```
+┌─────────────────┬──────────────────────────┬──────────────────┐
+│  LEFT           │  CENTRE                  │  RIGHT           │
+│  Documents      │  Chat                    │  Sources         │
+│                 │                          │                  │
+│ [Upload PDF]    │  Q: What are macros?     │ ┌──────────────┐ │
+│                 │                          │ │ Page 42      │ │
+│ ✓ nutrition.pdf │  A: Macronutrients are   │ │ Chapter 3    │ │
+│   3241 chunks   │  the three main... ▋     │ │ "The three   │ │
+│   [Delete]      │  (streaming)             │ │ macros are.."│ │
+│                 │                          │ └──────────────┘ │
+│ [+ Upload New]  │  [Type question here...] │ ┌──────────────┐ │
+│                 │  [Send]                  │ │ Page 87      │ │
+│                 │                          │ │ Chapter 5    │ │
+│                 │                          │ │ "Vitamins.." │ │
+│                 │                          │ └──────────────┘ │
+└─────────────────┴──────────────────────────┴──────────────────┘
+```
+
+---
+
+## SCALING PATH
+
+| Stage | What Changes | What Stays the Same |
+|---|---|---|
+| Multi-PDF search | Remove doc_id filter in query | Everything else |
+| Qdrant Cloud | config.yaml: mode=cloud, fill cloud_url | All pipeline logic |
+| S3 File Storage | Implement S3FileStore(FileStore) | All pipeline logic |
+| Per-user isolation | Add user_id to metadata + Qdrant filter | All pipeline logic |
+| Async at scale | Swap BackgroundTasks for Celery | All pipeline logic, all API contracts |
+| Multi-modal | Add image_extractor.py, block_type=image | Existing text pipeline untouched |
+| Auth | Add FastAPI-Users middleware | All pipeline logic |
+
+---
+
+## IMPLEMENTATION ORDER
+
+Build and test each step independently before proceeding.
+```
+Step 1  → models/chunk.py, models/document.py, models/query.py
+Step 2  → config/settings.py + config/config.yaml
+Step 3  → core/parse/pdf_parser.py          [test: print ParsedBlocks from real PDF]
+Step 4  → core/parse/structure_detector.py  [test: verify section_path on every block]
+Step 5  → core/chunk/chunker.py             [test: chunk counts, no cross-section chunks, table atomicity]
+Step 6  → core/chunk/metadata_builder.py    [test: deterministic IDs, prev/next chain integrity]
+Step 7  → core/embed/embedder.py            [test: embed 10 chunks, verify normalisation]
+Step 8  → storage/base.py                   [interfaces only — no implementation]
+Step 9  → storage/qdrant_store.py           [test: upsert + search + filter on test data]
+Step 10 → storage/bm25_store.py             [test: build + keyword query + corpus mapping]
+Step 11 → storage/file_store.py             [test: save + load parent chunks]
+Step 12 → core/pipeline/ingestion.py        [test: full end-to-end on real PDF, verify all stores]
+Step 13 → core/retrieve/query_analyser.py   [test: filter extraction on sample queries]
+Step 14 → core/retrieve/hybrid_search.py    [test: dense + sparse + RRF, print ranked results]
+Step 15 → core/retrieve/reranker.py         [test: verify reranked order differs from RRF order]
+Step 16 → core/retrieve/context_builder.py  [test: parent fetch, sibling expansion, dedup]
+Step 17 → core/generate/prompt_builder.py   [test: print assembled prompt, verify metadata headers]
+Step 18 → core/generate/llm_client.py       [test: real OpenRouter call with assembled prompt]
+Step 19 → core/pipeline/retrieval.py        [test: full end-to-end question → cited answer]
+Step 20 → api/main.py + api/routes/         [test: curl/Postman all endpoints]
+Step 21 → frontend/                         [connect to API, test upload→query→sources flow]
+Step 22 → Dockerfile + Render + Vercel deploy
+```
+
+---
+
+## EXECUTION RULES
+
+### General Principles
+
+1. Separation of concerns is mandatory.
+2. API layer contains HTTP handling only — no business logic.
+3. core/ contains pure business logic — zero FastAPI imports.
+4. storage/ implements abstract interfaces only — no pipeline logic.
+5. models/ defines contracts. Never modified casually.
+6. config.yaml is the only place for tunable parameters.
+7. No hidden global state.
+8. No hardcoded values anywhere — model names, paths, keys, sizes.
+9. Every component must be independently testable.
+10. Architecture clarity over clever shortcuts.
+11. Storage layer is the only code that knows about persistence details.
+12. Pipeline orchestrators call modules in sequence — they contain no logic themselves.
+13. Each pipeline step receives its input explicitly — never reads from disk/DB directly.
+
+### DO's
+```
+✔ Follow the exact folder structure defined above.
+✔ Implement one file at a time.
+✔ Match Pydantic model field names exactly as defined in this document.
+✔ Use type hints everywhere.
+✔ Keep functions small and single-purpose.
+✔ Load all configuration via config/settings.py only.
+✔ Use dependency injection — pass dependencies explicitly.
+✔ Keep VectorStore, BM25Store, and FileStore behind their interfaces.
+✔ Normalise embeddings if config.embedding.normalise = true.
+✔ Log important pipeline steps: ingestion progress, retrieval stats.
+✔ Ensure deterministic chunk_id generation.
+✔ Ensure parent-child chunk linkage integrity before storage.
+✔ Ensure all metadata fields are populated before embedding step.
+✔ Use async only at the API layer — core/ is synchronous.
+✔ Write minimal but clear docstrings per function.
+✔ Return job_id immediately from /ingest — never block the HTTP response.
+✔ Store job status in-memory (or Redis later) — never poll the vector DB for job state.
+✔ Build BM25 index per doc_id, load per doc_id — never globally merged.
+✔ Store parent chunk text only in FileStore — never in Qdrant payload.
+✔ Always include retrieval_stats in QueryResponse for debuggability.
+✔ Support both streaming and non-streaming in llm_client.py.
+✔ Construct all file paths via FileStore — never with scattered os.path calls.
+✔ You MAY import from models/, config/, and storage/base.py — these are stable contracts.
+```
+
+### DON'Ts
+```
+✘ Do NOT merge layers — no embedding inside API routes.
+✘ Do NOT import FastAPI inside core/.
+✘ Do NOT import storage implementations directly inside pipeline logic — use interfaces.
+✘ Do NOT hardcode model names, chunk sizes, paths, or API keys anywhere.
+✘ Do NOT bypass abstraction layers.
+✘ Do NOT introduce LangChain, LlamaIndex, or other orchestration frameworks.
+✘ Do NOT auto-generate architecture changes — follow this document.
+✘ Do NOT rename schema fields without updating this entire document first.
+✘ Do NOT collapse parent-child chunking into a single level.
+✘ Do NOT remove metadata fields.
+✘ Do NOT store parent chunk text inside Qdrant payload — FileStore only.
+✘ Do NOT load the full BM25 corpus for all documents when querying one document.
+✘ Do NOT run reranker before RRF fusion is complete.
+✘ Do NOT send child chunk text to the LLM — always send parent chunk text.
+✘ Do NOT call the LLM if retrieval returns zero results — return "not found" directly.
+✘ Do NOT silently fail on ingestion errors — update job to status=failed with message.
+✘ Do NOT create unnecessary helper abstractions.
+✘ Do NOT optimise prematurely.
+✘ Do NOT introduce unused features.
+```
+
+### Metadata Rules
+```
+- Every child chunk must have all ChunkMetadata fields populated before storage.
+- chunk_id must be deterministic: sha256(doc_id + str(page_number) + str(char_start)).
+- prev_chunk_id and next_chunk_id must be set — None only for first/last chunk of document.
+- section_path must be human-readable: "Chapter 3 > 3.2 Lipid Oxidation".
+- is_near_heading must be computed before metadata is finalised.
+- page_range is always a two-int list, even single-page chunks: [42, 42].
+- token_count reflects child chunk text length — not parent.
+- chunk_level is always explicitly set — never inferred.
+```
+
+### Ingestion Pipeline Rules
+```
+Sequence: parse → structure_detect → chunk → build_metadata → embed → store_vectors + store_bm25 + store_parents
+
+- Parsing must be separate from chunking.
+- Chunking must be separate from embedding.
+- Embedding must be separate from storage.
+- Metadata must be built before embedding.
+- Storage must only accept fully-formed ChildChunk objects.
+- No implicit state sharing between steps.
+- Progress updates must reflect actual stage completion.
+- On any error: catch, set job status=failed, set message=error details, stop pipeline.
+```
+
+### Retrieval Pipeline Rules
+```
+Sequence: analyse_query → hybrid_search (dense ∥ sparse) → RRF fusion → rerank → build_context → build_prompt → call_llm → return_response
+
+- Query analysis must not perform retrieval.
+- Dense and sparse search must run independently before fusion.
+- Fusion must occur after both arms complete.
+- Reranking must operate only on fused results.
+- Context builder must fetch parents via FileStore abstraction only.
+- Prompt builder must not call storage directly.
+- LLM client must not know about retrieval internals.
+- If context_builder returns empty list: skip LLM, return "not found in document".
+```
+
+### Config Rules
+```
+- All model names must come from config.yaml.
+- All chunk sizes must come from config.yaml.
+- All retrieval top-k values must come from config.yaml.
+- Switching from local to cloud Qdrant requires only a config change.
+- No logic must break if config values are adjusted within reasonable ranges.
+```
+
+### Testing Rules
+```
+- Each module must be testable in isolation.
+- No API server required to test core logic.
+- Do not load the embedding model inside tests unless explicitly testing embedder.py.
+- Use small synthetic data for retrieval and chunking tests.
+- Test deterministic chunk_id generation with identical inputs.
+- Test that ingestion failure updates job status correctly.
+```
+
+### Deployment Rules
+```
+- Secrets (OpenRouter key, Qdrant cloud key) via environment variables only.
+- Non-secret tunable parameters via config.yaml only.
+- .env.example must be kept current with all required variable names.
+- Backend Dockerfile must not embed secrets.
+- Frontend reads API base URL from environment variable — never hardcoded.
+- CORS configured in api/main.py only — never in individual routes.
+```
+
+### AI Code Generation Rules
+```
+- Generate one file at a time.
+- Do not assume other files exist unless defined in this document.
+- Do not invent new architecture or new abstractions.
+- Do not refactor the folder structure.
+- Do not simplify the pipeline unless explicitly instructed.
+- Ask for clarification instead of guessing.
+- You MAY import from models/, config/, and storage/base.py — these are stable.
+- Reference this document as ground truth for all field names, sequences, and interfaces.
+```
+
+---
+
+## GOAL
+
+Build a production-grade, scalable, modular RAG system that is architecturally clean,
+extensible, and defensible in any technical interview or code review.
+
+**Execution over improvisation. Clarity over cleverness. Structure over shortcuts.**
