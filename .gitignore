@@ -49,8 +49,8 @@ data/
 backend/data/
 storage/
 backend/storage/downloads/
-backend/storage/json_store/
-*.pdf
+data/*.pdf
+backend/storage/*.pdf
 !README.md
 
 # --- IDEs & OS ---
@@ -68,14 +68,4 @@ Thumbs.db
 _agents/
 _agent/
 *.resolved
-architecture_overview.md
-task.md
-analysis_results.md
-research_notes.md
-experiment_results.md
-*.png
-*.jpeg
-*.jpg
-!frontend/public/*.png
-!frontend/public/*.jpeg
-!frontend/public/*.jpg
+*.mp4
