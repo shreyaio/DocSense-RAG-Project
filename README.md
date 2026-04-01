@@ -111,7 +111,7 @@ This ensures system stability under API constraints and production-like conditio
 - Qdrant (Vector Database)  
 - BM25 (Sparse Retrieval)  
 - httpx  
-- OpenRouter / LLM APIs  
+- Groq API  
 
 ### Frontend
 - React  
