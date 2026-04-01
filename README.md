@@ -27,6 +27,9 @@ This approach improves factual accuracy, reduces hallucinations, and enables int
 
 This implementation extends a standard RAG pipeline with structural enhancements to improve contextual coherence, retrieval precision, and scalability.
 
+<img width="1336" height="754" alt="image" src="https://github.com/user-attachments/assets/e4f940e4-c58b-46ad-b9cc-55d142796f4b" />
+
+
 ### Hybrid Retrieval Strategy
 
 The system combines:
