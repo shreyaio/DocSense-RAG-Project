@@ -23,7 +23,7 @@ A production-grade RAG (Retrieval Augmented Generation) web application.
 | Frontend | React + Tailwind | Component-based, deployable to Vercel |
 | PDF Parsing | PyMuPDF + pdfplumber | Layout-aware + table detection |
 | Chunking | Custom pipeline | RecursiveCharacterTextSplitter + parent-child |
-| Embedding | BAAI/bge-large-en-v1.5 | Best free CPU model, MTEB-proven |
+| Embedding | BAAI/bge-base-en-v1.5 | Best free CPU model, MTEB-proven |
 | Vector Store | Qdrant local file → Qdrant Cloud (same API) | No Docker, no server |
 | Sparse Search | rank-bm25 | Exact match, numbers, rare terms |
 | Re-ranker | cross-encoder/ms-marco-MiniLM-L-6-v2 | CPU-friendly, high accuracy |

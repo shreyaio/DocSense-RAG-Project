@@ -7,9 +7,9 @@ chunking:
   separators: ["\n\n", "\n", ". ", " "]
 
 embedding:
-  model_name: "BAAI/bge-large-en-v1.5"
+  model_name: "BAAI/bge-base-en-v1.5"
   batch_size: 32
-  vector_dim: 1024
+  vector_dim: 768
   query_prefix: "Represent this sentence for searching relevant passages: "
   normalise: true
 

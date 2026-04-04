@@ -61,6 +61,12 @@ Thumbs.db
 *.swp
 *.swo
 
+# --- Plan & Documentation Files ---
+architecture-plan.txt
+implementation_plan.md
+task.md
+*smart*food*expiry*.pdf
+
 # --- AI Agents & Artifacts ---
 .gemini/
 .agents/

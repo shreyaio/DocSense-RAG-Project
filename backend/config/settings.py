@@ -12,9 +12,9 @@ class ChunkingConfig(BaseModel):
     separators: list[str] = ["\n\n", "\n", ". ", " "]
 
 class EmbeddingConfig(BaseModel):
-    model_name: str = "BAAI/bge-large-en-v1.5"
+    model_name: str = "BAAI/bge-base-en-v1.5"
     batch_size: int = 32
-    vector_dim: int = 1024
+    vector_dim: int = 768
     query_prefix: str = "Represent this sentence for searching relevant passages: "
     normalise: bool = True
 

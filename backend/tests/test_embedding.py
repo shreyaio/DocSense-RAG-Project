@@ -27,7 +27,7 @@ def test_embedding_flow():
         "total_chunks": 1,
         "is_near_heading": False,
         "chunk_level": "child",
-        "embedding_model": "BAAI/bge-large-en-v1.5",
+        "embedding_model": "BAAI/bge-base-en-v1.5",
         "created_at": "now"
     }
     
