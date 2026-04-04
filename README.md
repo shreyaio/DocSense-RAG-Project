@@ -27,16 +27,8 @@ This approach improves factual accuracy, reduces hallucinations, and enables int
 
 This implementation extends a standard RAG pipeline with structural enhancements to improve contextual coherence, retrieval precision, and scalability.
 
-### Hybrid Retrieval Strategy
+<img width="1336" height="754" alt="image" src="https://github.com/user-attachments/assets/e4f940e4-c58b-46ad-b9cc-55d142796f4b" />
 
-The system combines:
-
-- Dense vector retrieval using semantic embeddings (Qdrant)
-- Sparse keyword-based retrieval using BM25
-
-Hybrid retrieval improves recall by balancing semantic similarity with lexical matching, resulting in more robust document grounding.
-
----
 
 ### Parent–Child Chunking Strategy
 
@@ -75,6 +67,32 @@ Metadata is leveraged for:
 
 ---
 
+### Query Analysis
+
+Before retrieval, the system analyzes user queries to detect structural signals such as page references or section-based intent.
+
+These signals are converted into retrieval filters, enabling more precise and context-aware search over indexed documents.
+
+---
+
+### Hybrid Retrieval Strategy
+
+The system combines:
+
+- Dense vector retrieval using semantic embeddings (Qdrant)
+- Sparse keyword-based retrieval using BM25
+
+Hybrid retrieval improves recall by balancing semantic similarity with lexical matching, resulting in more robust document grounding.
+
+---
+### Re-ranking Layer
+
+After hybrid retrieval, candidate chunks are re-ranked using a cross-encoder model that evaluates the query and retrieved content jointly.
+
+This step improves retrieval precision by correcting ranking inconsistencies from embedding-based similarity search, ensuring that only the most relevant context is passed to the generation layer.
+
+---
+
 ### Modular Ingestion Pipeline
 
 The ingestion pipeline is divided into distinct, extensible stages:
@@ -108,16 +126,18 @@ This ensures system stability under API constraints and production-like conditio
 ### Backend
 - Python  
 - FastAPI  
-- Qdrant (Vector Database)  
-- BM25 (Sparse Retrieval)  
+- Qdrant  
+- rank-bm25  
+- BAAI/bge-large-en-v1.5 (embeddings)  
+- cross-encoder/ms-marco-MiniLM-L-6-v2 (re-ranking)  
 - httpx  
-- OpenRouter / LLM APIs  
+- Groq API  
 
 ### Frontend
+- Next.js  
 - React  
 - Tailwind CSS  
-- Grid-based layout system  
-- Resizable split-pane interface  
+- ShadCN UI  
 
 ---
 
