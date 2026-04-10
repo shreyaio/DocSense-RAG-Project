@@ -42,7 +42,7 @@ def test_hybrid_search_logic():
     embedder = MagicMock()
     
     # Setup mock returns
-    embedder.embed_query.return_value = [0.1] * 1024
+    embedder.embed_query.return_value = [0.1] * 768
     v_store.search.return_value = [
         {"chunk_id": "c1", "payload": {"doc_id": "d1", "parent_id": "p1", "text": "text1", "page_number": 1, "page_range": [1,1], "char_start": 0, "char_end": 10, "block_type": "text", "token_count": 5, "chunk_index": 0, "total_chunks": 1, "is_near_heading": False, "chunk_level": "child", "embedding_model": "bge", "created_at": "now", "section_path": "Intro"}}
     ]

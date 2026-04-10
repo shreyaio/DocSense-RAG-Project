@@ -16,7 +16,7 @@ embedding:
 qdrant:
   # Production Cloud-only configuration
   # URL and API key sourced from environment variables: QDRANT_URL, QDRANT_API_KEY
-  collection_name: "rag_chunks"
+  collection_name: "rag_chunks_v2"
   hnsw_m: 16
   hnsw_ef_construct: 100
   hnsw_ef: 64                       # query-time ef — higher = more accurate

@@ -22,14 +22,14 @@ def test_storage():
         chunk_index=0, total_chunks=1, is_near_heading=False,
         chunk_level="child", embedding_model="test-model", created_at="now"
     )
-    chunks = [ChildChunk(text="Hello world test", metadata=metadata, embedding=[0.1] * 1024)]
+    chunks = [ChildChunk(text="Hello world test", metadata=metadata, embedding=[0.1] * 768)]
     parents = [ParentChunk(parent_id="p1", doc_id=doc_id, text="Hello world parent", page_range=[1,1], section_path="Intro", child_ids=["c1"])]
 
     # 1. Test Qdrant
     print("Testing Qdrant Store...")
     v_store = QdrantLocalStore()
     v_store.upsert(chunks)
-    hits = v_store.search([0.1] * 1024, top_k=5, filters={"doc_id": doc_id})
+    hits = v_store.search([0.1] * 768, top_k=5, filters={"doc_id": doc_id})
     print(f"Qdrant hits: {len(hits)}")
     
     # 2. Test BM25

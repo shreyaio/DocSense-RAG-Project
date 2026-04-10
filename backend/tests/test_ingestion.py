@@ -53,7 +53,7 @@ def test_full_ingestion():
         print("\nVerifying storage contents...")
         
         # 1. Qdrant
-        hits = vector_store.search(vector=[0.0]*1024, top_k=10, filters={"doc_id": doc_id})
+        hits = vector_store.search(vector=[0.0]*768, top_k=10, filters={"doc_id": doc_id})
         print(f"Qdrant: Found {len(hits)} chunks for doc_id {doc_id}")
         
         # 2. BM25
